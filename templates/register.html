@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/x-icon" />
+    <meta property="og:title" content="Sweeter - the sweetest site" />
+    <meta property="og:description" content="mini project for Web Plus" />
+    <meta property="og:image" content="{{ url_for('static', filename='image.png') }}" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+
+<body>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/x-icon" />
+        <meta property="og:title" content="Sweeter - the sweetest site" />
+        <meta property="og:description" content="mini project for Web Plus" />
+        <meta property="og:image" content="{{ url_for('static', filename='image.png') }}" />
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Link Bulma -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+        <title>Login</title>
+        <!-- Link Jquery -->
+        <script src="https://code.jquery.com/jquery-3.7.1.js"
+            integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous">
+            </script>
+        <!-- Link Jquery Cookies -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+            integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer">
+            </script>
+        <script>
+            function register() {
+                let id = $('#userid').val()
+                let pw = $('#userpw').val()
+                let nick = $('#usernickname').val()
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/register',
+                    data: {
+                        'id_give': id,
+                        'pw_give': pw,
+                        'nickname_give': nick
+                    },
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            alert('Akun anda berhasil dibuat');
+                            window.location.href = '/login'
+                        }
+                        if (response.result === 'fail') {
+                            alert(response.msg);
+                            window.location.href = '/login'
+                        }
+                    }
+                });
+            }
+        </script>
+    </head>
+
+    <body>
+        <section class="section has-text-centered">
+            <h1 class="title">User Register</h1>
+            <div class="container" style="width: 60%;">
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label" for="userid">ID</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input id="userid" class="input" type="text" placeholder="My ID">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label" for="userpw">Password</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input id="userpw" class="input" type="password" placeholder="My Password">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label" for="usernickname">Nickname</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input id="usernickname" class="input" type="text" placeholder="My Nickname">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="button is-primary" onclick="register()">User Registration</button>
+            </div>
+        </section>
+    </body>
+
+    </html>
+</body>
+
+</html>
