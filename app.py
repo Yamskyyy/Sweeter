@@ -3,6 +3,7 @@ from os.path import join, dirname
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+from bson import ObjectId
 import jwt
 import hashlib
 from flask import (
@@ -26,31 +27,83 @@ TOKEN_KEY = 'mytoken'
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-MONGODB_URI = os.environ.get("MONGODB_URI")
-DB_NAME =  os.environ.get("DB_NAME")
-
-client = MongoClient(MONGODB_URI)
-db = client[DB_NAME]
+client=MongoClient('mongodb+srv://Aryama:1234@cluster0.9x3eatx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+db=client.dbOrderKerja
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
-        user_info = db.users.find_one({"username": payload["id"]})
-        return render_template("index.html", user_info=user_info)
-    except jwt.ExpiredSignatureError:
-        return redirect(url_for("login", msg="Your token has expired"))
-    except jwt.exceptions.DecodeError:
-        return redirect(url_for("login", msg="There was problem logging you in"))
+    token_receive = request.cookies.get(TOKEN_KEY)
+    if token_receive:
+        try:
+            payload = jwt.decode(
+                token_receive,
+                SECRET_KEY,
+                algorithms=['HS256']
+            )
+            user_info = db.normal_users.find_one({'username': payload.get('id')})
+            user_info2 = db.expert_users.find_one({'username': payload.get('id')})
+            order=list(db.order.find({}))
 
+            if user_info:
+                return render_template('dashboard.html',user_info=user_info, order=order)
+            elif user_info2:
+                return render_template('order.html',user_info2=user_info2, order=order)
+            else:
+                return render_template('login.html')
+
+        except jwt.ExpiredSignatureError:
+            msg = 'Your token has expired'
+            return redirect(url_for('login', msg=msg))
+        except jwt.exceptions.DecodeError:
+            msg = 'There was a problem logging you in'
+            return redirect(url_for('login', msg=msg))
+    else:
+        return render_template('login.html')
+
+    
+@app.route('/dashboard',methods=['GET'])
+def dashboard():
+    if request.method=='POST':
+        # Handle POST Request here
+        return render_template('index.html')
+    order=list(db.order.find({}))
+    return render_template('dashboard.html', order=order)
 
 @app.route("/login")
 def login():
+    token_receive = request.cookies.get(TOKEN_KEY)
     msg = request.args.get("msg")
-    return render_template("login.html", msg=msg)
+    if msg:
+        return render_template('login.html',msg=msg)
+    else:
+        if token_receive:
+            try:
+                payload = jwt.decode(
+                    token_receive,
+                    SECRET_KEY,
+                    algorithms=['HS256']
+                )
+                user_info = db.normal_users.find_one({'username':payload.get('id')})
+                user_info2 = db.expert_users.find_one({'username':payload.get('id')})
+                order=list(db.order.find({}))
+                
+                if user_info:
+                    return render_template('dashboard.html',user_info=user_info, order=order)
+                elif user_info2:
+                    return render_template('order.html',user_info2=user_info2, order=order)
+                else:
+                    return render_template('login.html')
+                    
+            except jwt.ExpiredSignatureError:
+                msg='Your token has expired'
+                return redirect(url_for('login', msg=msg))
+            except jwt.exceptions.DecodeError:
+                msg='There was a problem logging you in'
+                return redirect(url_for('login', msg=msg))
+        else:
+            return render_template('login.html',msg=msg)
 
 
 @app.route("/user/<username>")
@@ -77,7 +130,13 @@ def sign_in():
     password_receive = request.form["password_give"]
     pw_hash = hashlib.sha256(password_receive.encode("utf-8")).hexdigest()
     print(username_receive, pw_hash)
-    result = db.users.find_one(
+    result = db.normal_users.find_one(
+        {
+            "username": username_receive,
+            "password": pw_hash,
+        }
+    )
+    result2 = db.expert_users.find_one(
         {
             "username": username_receive,
             "password": pw_hash,
@@ -97,8 +156,20 @@ def sign_in():
                 "token": token,
             }
         )
-    # Let's also handle the case where the id and
-    # password combination cannot be found
+    elif result2:
+        payload = {
+            "id": username_receive,
+            # the token will be valid for 24 hours
+            "exp": datetime.utcnow() + timedelta(seconds=60 * 60 * 24),
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+        return jsonify(
+            {
+                "result": "success",
+                "token": token,
+            }
+        )
     else:
         return jsonify(
             {
@@ -112,168 +183,109 @@ def sign_in():
 def sign_up():
     username_receive = request.form["username_give"]
     password_receive = request.form["password_give"]
+    role_receive = request.form["role_give"]
     password_hash = hashlib.sha256(password_receive.encode("utf-8")).hexdigest()
-    doc = {
-        "username": username_receive,  # id
-        "password": password_hash,  # password
-        "profile_name": username_receive,  # user's name is set to their id by default
-        "profile_pic": "",  # profile image file name
-        "profile_pic_real": "profile_pics/profile_placeholder.png",  # a default profile image
-        "profile_info": "",  # a profile description
-    }
-    db.users.insert_one(doc)
-    return jsonify({"result": "success"})
+    if(role_receive == 'expert'):
+        doc = {
+            "username": username_receive,                               
+            "password": password_hash,                                  
+            "profile_name": username_receive,
+            "role":role_receive,                                            
+            }
+        db.expert_users.insert_one(doc)
+        return jsonify({'result': 'success'})
+    elif(role_receive == 'normal'):
+        doc = {
+            "username": username_receive,                               
+            "password": password_hash,
+            "profile_name" : username_receive,     
+            "role":role_receive,                                                                        
+            }
+        db.normal_users.insert_one(doc)
+        return jsonify({'result': 'success'})
+    else:
+        return jsonify({'result': 'failed'})
 
 
 @app.route("/sign_up/check_dup", methods=["POST"])
 def check_dup():
     # ID we should check whether or not the id is already taken
     username_receive = request.form["username_give"]
-    exists = bool(db.users.find_one({"username": username_receive}))
-    return jsonify({"result": "success", "exists": exists})
+    exists = bool(db.normal_users.find_one({'username':username_receive}))
+    exists2 = bool(db.expert_users.find_one({'username':username_receive}))
+    return jsonify({"result": "success", "exists": exists+exists2})
 
+@app.route('/order',methods=['GET'])
+def order():
+    if request.method=='POST':
+        # Handle POST Request here
+        return render_template('index.html')
+    order=list(db.order.find({}))
+    return render_template('order.html', order=order)
 
-@app.route("/update_profile", methods=["POST"])
-def save_img():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
-        username = payload["id"]
-        name_receive = request.form["name_give"]
-        about_receive = request.form["about_give"]
-        new_doc = {"profile_name": name_receive, "profile_info": about_receive}
-        if "file_give" in request.files:
-            file = request.files["file_give"]
-            filename = secure_filename(file.filename)
-            extension = filename.split(".")[-1]
-            file_path = f"profile_pics/{username}.{extension}"
-            file.save("./static/" + file_path)
-            new_doc["profile_pic"] = filename
-            new_doc["profile_pic_real"] = file_path
-        db.users.update_one({"username": payload["id"]}, {"$set": new_doc})
-        return jsonify({"result": "success", "msg": "Profile updated!"})
-    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-        return redirect(url_for("home"))
+@app.route('/AddOrder',methods=['GET', 'POST'])
+def AddOrder():
+    if request.method=='POST':
+        nama = request.form['nama']
+        dari = request.form['dari']
+        untuk = request.form['untuk']
+        deskripsi = request.form['deskripsi']
 
+        gambar=request.files['gambar']
+        extension= gambar.filename.split('.')[-1]
+        today=datetime.now()
+        mytime=today.strftime('%Y-%M-%d:%H-%m-%S')
+        gambar_name = f'gambar-{mytime}.{extension}'
+        save_to = f'static/assets/Imgorder/{gambar_name}'
+        gambar.save(save_to)
 
-@app.route("/posting", methods=["POST"])
-def posting():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
-        # We should create a new post here
-        user_info = db.users.find_one({"username": payload["id"]})
-        comment_receive = request.form["comment_give"]
-        date_receive = request.form["date_give"]
         doc = {
-            "username": user_info["username"],
-            "profile_name": user_info["profile_name"],
-            "profile_pic_real": user_info["profile_pic_real"],
-            "comment": comment_receive,
-            "date": date_receive,
+            'nama' : nama,
+            'dari' : dari,
+            'untuk' : untuk,
+            'deskripsi' : deskripsi,
+            'gambar' : gambar_name
         }
-        db.posts.insert_one(doc)
-        return jsonify({"result": "success", "msg": "Posting successful!"})
-    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-        return redirect(url_for("home"))
+        db.order.insert_one(doc)
+        return redirect(url_for('order'))
+    return render_template('AddOrder.html')
 
+@app.route('/EditOrder/<_id>',methods=['GET', 'POST'])
+def EditOrder(_id):
+    if request.method=='POST':
+        nama = request.form['nama']
+        dari = request.form['dari']
+        untuk = request.form['untuk']
+        deskripsi = request.form['deskripsi']
 
-@app.route("/get_posts", methods=["GET"])
-def get_posts():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
+        gambar=request.files['gambar']
+        extension= gambar.filename.split('.')[-1]
+        today=datetime.now()
+        mytime=today.strftime('%Y-%M-%d:%H-%m-%S')
+        gambar_name = f'gambar-{mytime}.{extension}'
+        save_to = f'static/assets/Imgorder/{gambar_name}'
+        gambar.save(save_to)
 
-        username_receive = request.args.get("username_give")
-        if username_receive == "":
-            posts = list(db.posts.find({}).sort("date", -1).limit(20))
-        else:
-            posts = list(
-                db.posts.find({"username": username_receive}).sort("date", -1).limit(20)
-            )
-
-        for post in posts:
-            post["_id"] = str(post["_id"])
-            post["count_heart"] = db.likes.count_documents(
-                {"post_id": post["_id"], "type": "heart"}
-            )
-            
-            post["count_star"] = db.likes.count_documents(
-                {"post_id": post["_id"], "type": "star"}
-            )
-            
-            post["count_thumbsup"] = db.likes.count_documents(
-                {"post_id": post["_id"], "type": "thumbsup"}
-            )
-            
-            post["heart_by_me"] = bool(
-                db.likes.find_one(
-                    {"post_id": post["_id"], "type": "heart", "username": payload["id"]}
-                )
-            )
-            
-            post["star_by_me"] = bool(
-                db.likes.find_one(
-                    {"post_id": post["_id"], "type": "star", "username": payload["id"]}
-                )
-            )
-            
-            post["thumbsup_by_me"] = bool(
-                db.likes.find_one(
-                    {"post_id": post["_id"], "type": "thumbsup", "username": payload["id"]}
-                )
-            )
-        return jsonify(
-            {
-                "result": "success",
-                "msg": "Successful fetched all posts",
-                "posts": posts,
-            }
-        )
-    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-        return redirect(url_for("home"))
-
-
-@app.route("/update_like", methods=["POST"])
-def update_like():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
-        # We should change the like count for the post here
-        user_info = db.users.find_one({"username": payload["id"]})
-        post_id_receive = request.form["post_id_give"]
-        type_receive = request.form["type_give"]
-        action_receive = request.form["action_give"]
         doc = {
-            "post_id": post_id_receive,
-            "username": user_info["username"],
-            "type": type_receive,
+            'nama' : nama,
+            'dari' : dari,
+            'untuk' : untuk,
+            'deskripsi' : deskripsi,
         }
-        if action_receive == "like":
-            db.likes.insert_one(doc)
-        else:
-            db.likes.delete_one(doc)
-        count = db.likes.count_documents(
-            {"post_id": post_id_receive, "type": type_receive}
-        )
-        return jsonify({"result": "success", "msg": "updated", "count": count})
-    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-        return redirect(url_for("home"))
+        if gambar:
+            doc['gambar']=gambar_name
+        db.order.update_one({'_id': ObjectId(_id)}, {'$set':doc})
+        return redirect(url_for('order'))
+    id = ObjectId(_id)
+    data = list(db.order.find({'_id': id}))
 
+    return render_template('EditOrder.html', data=data)  
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
-
-
-@app.route("/secret")
-def secret():
-    token_receive = request.cookies.get("mytoken")
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=["HS256"])
-        return render_template("secret.html")
-    except (jwt.ExpiredSignatureError, jwt.exceptions.DecodeError):
-        return redirect(url_for("home"))
+@app.route('/DeleteOrder/<_id>',methods=['GET', 'POST'])
+def DeleteOrder(_id):
+    id = ObjectId(_id)
+    db.order.delete_one({'_id':id})
+    return redirect(url_for('order'))
 
 
 if __name__ == "__main__":

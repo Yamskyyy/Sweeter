@@ -63,3 +63,64 @@ input::-webkit-calender-picker-indicator {
     font-optical-sizing: auto;
     font-size: x-large;
 }
+
+/* Base styles for a clean and modern dropdown */
+.form-select {
+    display: inline-block;
+    width: 100%; /* Adjust width as needed */
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px; /* Adjust font size as needed */
+    background-color: #fff;
+    cursor: pointer;
+    outline: none; /* Remove default outline */
+    margin-bottom: 12px;
+  }
+  
+  /* Style the selected option */
+  .form-select option:checked {
+    background-color: #eee;
+  }
+  
+  /* Dropdown list styles */
+  .form-select:after {
+    content: "\25BC"; /* Down arrow icon (adjust as needed) */
+    font-size: 12px; /* Adjust arrow icon size as needed */
+    color: #888;
+    position: absolute;
+    right: 10px; /* Adjust arrow positioning as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* Disable interaction on arrow */
+  }
+  
+  /* Hide the dropdown list by default */
+  .form-select-list {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 2px; /* Adjust margin as needed */
+    list-style: none;
+    padding: 0;
+    z-index: 1; /* Ensure dropdown stays above other elements */
+  }
+  
+  /* Style the dropdown list options */
+  .form-select-list option {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  
+  /* Show the dropdown list on hover */
+  .form-select:hover .form-select-list {
+    display: block;
+  }
+
+.gambarPPA {
+    width: 80px;
+    margin-bottom: 20px;
+}

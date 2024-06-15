@@ -3,7 +3,7 @@
 
 <head>
 
-    <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/x-icon" />
+    <link rel="icon" href="../static/assets/img/logo.png" type="image/x-icon" />
     <meta property="og:title" content="Sweeter - the sweetest site" />
     <meta property="og:description" content="mini project for Web Plus" />
     <meta property="og:image" content="{{ url_for('static', filename='image.png') }}" />
@@ -31,7 +31,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
     <script src="https://kit.fontawesome.com/d8c46daaeb.js" crossorigin="anonymous"></script>
-    <title>Sweeter</title>
+    <title>Pt. Jakarana Tama</title>
 
     <script>
         function sign_in() {
@@ -79,7 +79,9 @@
             let username = $("#input-username").val();
             let password = $("#input-password").val();
             let password2 = $("#input-password2").val();
-            console.log(username, password, password2);
+            let selectRole = $("#role_select").val();
+            let helpRole = $('#help_role');
+            console.log(username, password, password2, selectRole);
 
             if ($("#help-id").hasClass("is-danger")) {
                 alert("Please check your id");
@@ -131,12 +133,22 @@
                     .removeClass("is-danger")
                     .addClass("is-success");
             }
+
+            if (selectRole === '') {
+                helpRole.text('Please select one of them between normal user or an expert')
+                    .removeClass('is-safe')
+                    .addClass('is-danger')
+                selectRole.focus()
+                return;
+            }
+
             $.ajax({
                 type: "POST",
                 url: "/sign_up/save",
                 data: {
                     username_give: username,
                     password_give: password,
+                    role_give: selectRole,
                 },
                 success: function (response) {
                     alert("Your are signed up! Nice!");
@@ -151,7 +163,7 @@
         }
 
         function is_password(asValue) {
-            var regExp = /^(?=.\d)(?=.[a-zA-Z])[0-9a-zA-Z!@#$%^&*]{8,20}$/;
+            var regExp = /^(?=.*\d)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%^&*]{8,20}$/;
             return regExp.test(asValue);
         }
 
@@ -162,6 +174,9 @@
             $("#help-id").toggleClass("is-hidden");
             $("#help-password").toggleClass("is-hidden");
             $("#help-password2").toggleClass("is-hidden");
+            $("#role_select").toggleClass("is-hidden");
+            $("#help_role").toggleClass("is-hidden");
+            $("#judul").toggleClass("is-hidden");
         }
 
         function check_dup() {
@@ -223,53 +238,51 @@
     <nav class="navbar is-fixed-top is-white" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item" href="/">
-                <img src="{{ url_for('static', filename='logo.png') }}" />
-                <strong class="is-sparta logo-text ml-2">SWEETER</strong>
+                <img src="../static/assets/img/logo.png" />
+                <strong class="is-sparta logo-text ml-2">Pt Jakarana Tama</strong>
             </a>
         </div>
     </nav>
     <!-- NAVBAR END -->
 
-    <!-- HERO START -->
-    <section class="hero is-white">
-        <div class="hero-body has-text-centered" style="padding-bottom: 1rem; margin: auto">
-            <h1 class="title is-sparta">SWEETER</h1>
-            <h3 class="subtitle is-sparta">The Sweetest</h3>
-        </div>
-    </section>
-    <!-- HERO END -->
-
     <section class="section">
         <div class="container">
-            <div class="box" style="max-width: 480px; margin: auto">
+            <div class="box" style="max-width: 480px; margin: auto; margin-top: 100px;">
+                <img class="gambarPPA" src="../static/assets/img/logo.png" alt="logoPT">
+                <h2 id="title" style="text-align: center; padding-bottom:10px;">Login Page</h2>
                 <article class="media">
                     <div class="media-content">
                         <div class="content">
                             <div class="field has-addons">
                                 <div class="control has-icons-left" style="width: 100%">
-                                    <input id="input-username" class="input" type="text" placeholder="id" />
+                                    <input id="input-username" class="input" type="text" placeholder="Username" />
                                     <span class="icon is-small is-left"><i class="fa fa-user"></i></span>
                                 </div>
                                 <div id="btn-check-dup" class="control is-hidden">
                                     <button class="button is-sparta" onclick="check_dup()">
-                                        Check your id
+                                        Cek Username
                                     </button>
                                 </div>
                             </div>
                             <p id="help-id" class="help is-hidden">
-                                For your id, please enter 2-10 English characters, numbers, or
-                                the following special characters (._-)
+                                Untuk id Anda, masukkan 2-10 karakter, angka, atau karakter khusus berikut (._-)
                             </p>
                             <p id="help-id-login" class="help is-danger" style="font-weight: bold"></p>
-
+                            <select id="role_select" class="form-select is-hidden">
+                                <option selected value="" disabled class="input">Select your role</option>
+                                <option value="normal">User</option>
+                                <option value="expert">Admin</option>
+                            </select>
+                            <p id="help_role" class="help is-hidden">
+                                
+                            </p>
                             <div class="field">
                                 <div class="control has-icons-left">
-                                    <input id="input-password" class="input" type="password" placeholder="password" />
+                                    <input id="input-password" class="input" type="Password" placeholder="Masukkan Password" />
                                     <span class="icon is-small is-left"><i class="fa fa-lock"></i></span>
                                 </div>
                                 <p id="help-password" class="help is-hidden">
-                                    For your password, please enter 8-20 English characters,
-                                    numbers, or the following special characters (!@#$%^&*)
+                                    Untuk kata sandi Anda, masukkan 8-20 karakter, angka, atau karakter khusus berikut (!@#$%^&*)
                                 </p>
                             </div>
                         </div>
@@ -283,10 +296,10 @@
                                 </button>
                             </nav>
                             <hr />
-                            <h4 class="mb-3">If you have not yet signed up</h4>
+                            <h4 class="mb-3">Belum Punya Akun? Klik Tombol Daftar dibawah ini</h4>
                             <nav class="level is-mobile">
                                 <button class="level-item button is-sparta is-outlined" onclick="toggle_sign_up()">
-                                    Sign Up
+                                    Daftar
                                 </button>
                             </nav>
                         </div>
@@ -296,7 +309,7 @@
                                 <div class="field">
                                     <div class="control has-icons-left" style="width: 100%">
                                         <input id="input-password2" class="input" type="password"
-                                            placeholder="Confirm your password" />
+                                            placeholder="Konfirmasi password" />
                                         <span class="icon is-small is-left"><i class="fa fa-lock"></i></span>
                                     </div>
                                 </div>
@@ -306,7 +319,7 @@
                                     <i class="fa-solid fa-arrow-right-to-bracket"></i>
                                 </button>
                                 <button class="level-item button is-sparta is-outlined" onclick="toggle_sign_up()">
-                                    cancel
+                                    Cancel
                                 </button>
                                 <button class="level-item button is-sparta is-outlined" onclick="clearInputs()">
                                     <i class="fa-solid fa-trash"></i>

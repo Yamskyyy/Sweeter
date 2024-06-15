@@ -1,0 +1,43 @@
+{% include 'header.html' %}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Dashboard</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active">Dashboard</li>
+            </ol>
+        </nav>
+    </div><!-- End Page Title -->
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+
+        <!-- looping --->
+        {% for item in order %}
+        <div class="col">
+            <div class="card">
+                <img src="../static/assets/Imgorder/{{item.gambar}}" class="card-img-top"
+                    alt="Hollywood Sign on The Hill" />
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="card-title">{{item.nama}}</h5>
+                    </div>
+                    <p class="card-text">
+                    <h5 class="card-title" style="color: brown;">Dari : {{item.dari}}</h5>
+                    <h5 class="card-title" style="color: brown;">Untuk : {{item.untuk}}</h5>
+                    <!-- <strong>Untuk : </strong>{{item.untuk}}<br> -->
+                    <Strong class="desc">Deskripsi : </Strong> <span>{{item.deskripsi}}</span>
+                    </p>
+                </div>
+                <div class="approve">
+                    <button type="button" class="btn btn-danger">Reject</button>
+                    <button type="button" class="btn btn-primary">Approve</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <!-- looping --->
+
+    </div>
+</main>
+{% include 'footer.html' %}
